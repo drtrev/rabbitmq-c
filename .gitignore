@@ -26,6 +26,8 @@
 /stamp-h1
 /test-suite.log
 INSTALL
+install-debug
+install-release
 Makefile
 Makefile.in
 examples/amqp_bind

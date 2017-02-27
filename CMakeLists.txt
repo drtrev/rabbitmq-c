@@ -270,7 +270,34 @@ option(ENABLE_SSL_SUPPORT "Enable SSL support" ON)
 option(ENABLE_THREAD_SAFETY "Enable thread safety when using OpenSSL" ${Threads_FOUND})
 
 if (ENABLE_SSL_SUPPORT)
-  find_package(OpenSSL 0.9.8 REQUIRED)
+    if (NOT WIN32)
+        find_package(OpenSSL 0.9.8 REQUIRED)
+    else()
+        # This fails on older versions of CMake (e.g. 3.2.2).
+        # find_package(OpenSSL 0.9.8 REQUIRED)
+
+        # Workaround: Set the vars yourself instead! (OPENSSL_LIBRARIES etc. See FindOpenSSL.cmake)
+        set(OPENSSL_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../openssl-private/install-release")
+        set(OPENSSL_FOUND TRUE)
+        set(OPENSSL_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../openssl-private/install-release/include")
+        set(OPENSSL_CRYPTO_LIBRARY "${CMAKE_CURRENT_SOURCE_DIR}/../openssl-private/install-release/lib/libcrypto.lib")
+        set(OPENSSL_SSL_LIBRARY "${CMAKE_CURRENT_SOURCE_DIR}/../openssl-private/install-release/lib/libssl.lib")
+        set(OPENSSL_LIBRARIES ${OPENSSL_CRYPTO_LIBRARY} ${OPENSSL_SSL_LIBRARY})
+        
+        # Get version number from openssl.exe
+        execute_process(COMMAND ${OPENSSL_ROOT_DIR}/bin/openssl.exe version OUTPUT_VARIABLE OPENSSL_VERSION_LINE OUTPUT_STRIP_TRAILING_WHITESPACE)
+        
+        MESSAGE(STATUS "-------- OPENSSL_VERSION_LINE: ${OPENSSL_VERSION_LINE}")
+        
+        string(REGEX REPLACE "^.*([0-9]+)\\.([0-9]+)\\.([0-9]+).*$"
+               "\\1;\\2;\\3" OPENSSL_VERSION_LIST "${OPENSSL_VERSION_LINE}")
+        list(GET OPENSSL_VERSION_LIST 0 OPENSSL_VERSION_MAJOR)
+        list(GET OPENSSL_VERSION_LIST 1 OPENSSL_VERSION_MINOR)
+        list(GET OPENSSL_VERSION_LIST 2 OPENSSL_VERSION_FIX)
+        
+        set(OPENSSL_VERSION "${OPENSSL_VERSION_MAJOR}.${OPENSSL_VERSION_MINOR}.${OPENSSL_VERSION_FIX}")
+        MESSAGE(STATUS "-------- OPENSSL_VERSION: ${OPENSSL_VERSION}")
+    endif()
 endif()
 
 if (NOT BUILD_SHARED_LIBS AND NOT BUILD_STATIC_LIBS)
